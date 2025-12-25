@@ -17,7 +17,7 @@ type Topic = {
 // tu pourras ajouter les autres au fur et à mesure
 const MODULE_KEYS = {
   grapeQuiz: "learn:basics:grape:quiz",
-  // regionQuiz: "learn:basics:region:quiz",
+  regionQuiz: "learn:basics:region:quiz",
   // vintageQuiz: "learn:basics:vintage:quiz",
   // labelQuiz: "learn:basics:label:quiz",
 } as const;
@@ -61,6 +61,7 @@ const topics: Topic[] = [
     subtitle: "Large vs précis : comment lire l’origine sans se perdre.",
     href: "/learn/basics/region-appellation",
     bullets: ["Région (large)", "Appellation (règles)", "Exemples", "Indice de style"],
+    progressKey: MODULE_KEYS.regionQuiz,
   },
   {
     emoji: "🗓️",

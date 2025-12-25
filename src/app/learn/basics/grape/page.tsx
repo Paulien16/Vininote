@@ -3,21 +3,8 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useState } from "react";
+import Callout from "@/components/ui/Callout";
 
-function Callout({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <section className="rounded-3xl border border-white/10 bg-black/25 p-6">
-      <h2 className="text-sm font-semibold text-white">{title}</h2>
-      <div className="mt-2 text-sm leading-relaxed text-white/70">{children}</div>
-    </section>
-  );
-}
 
 export default function GrapeGuidePage() {
   const [open, setOpen] = useState(false);
@@ -154,37 +141,25 @@ export default function GrapeGuidePage() {
         </div>
 
         <div className="mt-6 space-y-4">
-          <Callout title="Définition simple">
-            Un cépage est une variété de raisin utilisée pour faire du vin (ex :
-            Chardonnay, Sauvignon Blanc, Syrah, Pinot Noir, Merlot).
-          </Callout>
+        <Callout title="Définition simple" variant="info">
+  Un cépage est une variété de raisin utilisée pour faire du vin (ex : Chardonnay, Sauvignon Blanc, Syrah,
+  Pinot Noir, Merlot).
+</Callout>
 
-          <Callout title="Ce que le cépage te dit (vraiment)">
-            Il donne des indices : famille d’arômes probable, acidité (souvent),
-            structure, tanins (surtout pour les rouges). Mais c’est un{" "}
-            <span className="text-white">indice</span>, pas une promesse.
-          </Callout>
+<Callout title="Ce que le cépage te dit (vraiment)" variant="note">
+  Il donne des indices : famille d’arômes probable, acidité (souvent), structure, tanins (surtout pour les rouges).
+  Mais c’est un <span className="text-white font-semibold">indice</span>, pas une promesse.
+</Callout>
 
-          <Callout title="Exemples rapides pour te repérer">
-            <ul className="list-disc space-y-2 pl-5">
-              <li>
-                <span className="font-semibold text-white">Sauvignon Blanc</span> :
-                souvent vif, agrumes, notes herbacées.
-              </li>
-              <li>
-                <span className="font-semibold text-white">Chardonnay</span> : très
-                variable (de très frais à très riche).
-              </li>
-              <li>
-                <span className="font-semibold text-white">Syrah</span> : épices /
-                poivre, structure, tanins présents.
-              </li>
-              <li>
-                <span className="font-semibold text-white">Pinot Noir</span> : plus
-                léger, fruit rouge, tanins fins.
-              </li>
-            </ul>
-          </Callout>
+<Callout title="Piège fréquent" variant="warning">
+  Deux vins au même cépage peuvent être très différents : climat, maturité, élevage, méthode de vinification…
+</Callout>
+
+<Callout title="Astuce pour progresser" variant="tip">
+  Compare 2 vins du même cépage mais de régions différentes : ton cerveau apprendra vite les “tendances” du cépage
+  et ce qui vient du terroir.
+</Callout>
+
         </div>
 
         {/* CTA quiz */}
