@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import confetti from "canvas-confetti";
-import SiteHeader from "@/components/ui/SiteHeader";
 
 type Q = {
   question: string;
@@ -71,7 +70,8 @@ export default function GrapeQuizPage() {
         ],
       },
       {
-        question: "Lequel de ces cépages est souvent associé à des tanins plus présents ?",
+        question:
+          "Lequel de ces cépages est souvent associé à des tanins plus présents ?",
         answers: [
           {
             label: "Syrah",
@@ -91,10 +91,12 @@ export default function GrapeQuizPage() {
         ],
       },
       {
-        question: "Pourquoi un Chardonnay peut être très différent d’une bouteille à l’autre ?",
+        question:
+          "Pourquoi un Chardonnay peut être très différent d’une bouteille à l’autre ?",
         answers: [
           {
-            label: "Parce que l’élevage (ex: bois) et la vinification influencent beaucoup",
+            label:
+              "Parce que l’élevage (ex: bois) et la vinification influencent beaucoup",
             correct: true,
             why: "Exact : bois / élevage / style peuvent transformer le vin.",
           },
@@ -114,24 +116,44 @@ export default function GrapeQuizPage() {
     []
   );
 
-  const PASS_SCORE = 4; // >=4/5 = réussite
+  const PASS_SCORE = 4;
 
-  const [i, setI] = useState(0);
+  // Anti-hydration (important)
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  // Quiz state
+  const [index, setIndex] = useState(0);
   const [picked, setPicked] = useState<number | null>(null);
   const [score, setScore] = useState(0);
 
-  // Micro-animations
-  const [xpBurstKey, setXpBurstKey] = useState(0); // force re-render du "+XP"
+  // UI micro-animations
+  const [xpKey, setXpKey] = useState(0);
   const [shake, setShake] = useState(false);
   const [pop, setPop] = useState(false);
 
-  const done = i >= questions.length;
-  const q = questions[Math.min(i, questions.length - 1)];
+  const total = questions.length;
+  const done = index >= total;
+  const current = questions[Math.min(index, total - 1)];
   const success = done && score >= PASS_SCORE;
 
-  // Confetti + grosse animation à la fin
-  useEffect(() => {
-    if (!success) return;
+  // Safe confetti wrapper
+  function safeConfetti(opts: Parameters<typeof confetti>[0]) {
+    if (!mounted) return;
+    confetti(opts);
+  }
+
+  function shootSmall() {
+    safeConfetti({
+      particleCount: 18,
+      spread: 35,
+      startVelocity: 18,
+      origin: { x: 0.85, y: 0.25 },
+    });
+  }
+
+  function shootBig() {
+    if (!mounted) return;
 
     const end = Date.now() + 900;
     const tick = () => {
@@ -144,77 +166,110 @@ export default function GrapeQuizPage() {
       if (Date.now() < end) requestAnimationFrame(tick);
     };
     tick();
+  }
+
+  // Big animation at the end
+  useEffect(() => {
+    if (!success) return;
+    shootBig();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [success]);
 
-  function choose(idx: number) {
-    if (picked !== null) return;
+  function choose(answerIdx: number) {
+    if (picked !== null || done) return;
 
-    setPicked(idx);
+    setPicked(answerIdx);
+    const ans = current.answers[answerIdx];
 
-    const ans = q.answers[idx];
     if (ans.correct) {
       setScore((s) => s + 1);
 
-      // micro “pop” + XP
+      // pop + XP float
       setPop(true);
-      setXpBurstKey((k) => k + 1);
+      setXpKey((k) => k + 1);
       window.setTimeout(() => setPop(false), 220);
 
-      // petit confetti discret (mini burst) à chaque bonne réponse
-      confetti({
-        particleCount: 18,
-        spread: 35,
-        startVelocity: 18,
-        origin: { x: 0.85, y: 0.25 },
-      });
+      // small confetti
+      shootSmall();
     } else {
-      // micro shake en cas d'erreur
       setShake(true);
       window.setTimeout(() => setShake(false), 260);
     }
   }
 
   function next() {
+    if (picked === null) return;
     setPicked(null);
-    setI((x) => x + 1);
+    setIndex((x) => x + 1);
   }
 
-  // Progress bar (animée)
-  const progress = Math.min(100, Math.round(((i) / questions.length) * 100));
-  const progressAfterAnswer = Math.min(100, Math.round(((i + (picked !== null ? 1 : 0)) / questions.length) * 100));
+  function reset() {
+    setIndex(0);
+    setPicked(null);
+    setScore(0);
+    setShake(false);
+    setPop(false);
+  }
+
+  // Progress
+  const answeredCount = Math.min(total, index + (picked !== null ? 1 : 0));
+  const progress = Math.round((answeredCount / total) * 100);
 
   return (
     <main className="min-h-screen bg-neutral-950 text-neutral-50">
-      <SiteHeader />
 
-      {/* petite CSS locale pour animations */}
+      {/* Animations CSS */}
       <style jsx global>{`
         .shake {
           animation: shake 0.25s ease-in-out;
         }
         @keyframes shake {
-          0% { transform: translateX(0); }
-          25% { transform: translateX(-6px); }
-          50% { transform: translateX(6px); }
-          75% { transform: translateX(-4px); }
-          100% { transform: translateX(0); }
+          0% {
+            transform: translateX(0);
+          }
+          25% {
+            transform: translateX(-6px);
+          }
+          50% {
+            transform: translateX(6px);
+          }
+          75% {
+            transform: translateX(-4px);
+          }
+          100% {
+            transform: translateX(0);
+          }
         }
 
         .xp-float {
           animation: xpfloat 0.8s ease-out forwards;
         }
         @keyframes xpfloat {
-          0% { opacity: 0; transform: translateY(6px) scale(0.98); }
-          15% { opacity: 1; }
-          100% { opacity: 0; transform: translateY(-18px) scale(1.02); }
+          0% {
+            opacity: 0;
+            transform: translateY(6px) scale(0.98);
+          }
+          15% {
+            opacity: 1;
+          }
+          100% {
+            opacity: 0;
+            transform: translateY(-18px) scale(1.02);
+          }
         }
 
         .win-card {
           animation: wincard 0.38s ease-out both;
         }
         @keyframes wincard {
-          0% { opacity: 0; transform: translateY(10px) scale(0.98); }
-          100% { opacity: 1; transform: translateY(0) scale(1); }
+          0% {
+            opacity: 0;
+            transform: translateY(10px) scale(0.98);
+          }
+          100% {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+          }
         }
       `}</style>
 
@@ -223,7 +278,9 @@ export default function GrapeQuizPage() {
           <div>
             <div className="text-sm font-semibold text-white/70">Quiz</div>
             <h1 className="mt-2 text-4xl font-semibold">🍇 Cépage — Se tester</h1>
-            <p className="mt-3 text-white/70">5 questions, feedback immédiat, XP & confettis ✨</p>
+            <p className="mt-3 text-white/70">
+              5 questions, feedback immédiat, XP & confettis ✨
+            </p>
           </div>
 
           <Link
@@ -234,31 +291,47 @@ export default function GrapeQuizPage() {
           </Link>
         </div>
 
-        {/* Progress bar */}
+        {/* Progress */}
         <div className="mt-6 rounded-3xl border border-white/10 bg-white/5 p-4">
           <div className="flex items-center justify-between text-xs text-white/60">
             <span>Progression</span>
-            <span>{done ? "Terminé" : `Question ${i + 1}/${questions.length}`}</span>
+            <span>{done ? "Terminé" : `Question ${index + 1}/${total}`}</span>
           </div>
+
           <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-white/10">
             <div
               className="h-full rounded-full bg-white/70 transition-all duration-300"
-              style={{ width: `${done ? 100 : (picked !== null ? progressAfterAnswer : progress)}%` }}
+              style={{ width: `${done ? 100 : progress}%` }}
             />
           </div>
         </div>
 
-        <div className={`mt-6 rounded-3xl border border-white/10 bg-white/5 p-6 ${shake ? "shake" : ""}`}>
+        {/* Card */}
+        <div
+          className={`mt-6 rounded-3xl border border-white/10 bg-white/5 p-6 ${
+            shake ? "shake" : ""
+          }`}
+        >
           {done ? (
             <div className={success ? "win-card" : ""}>
-              <div className="text-xl font-semibold">{success ? "🎉 Bravo !" : "Résultat"}</div>
+              <div className="text-xl font-semibold">
+                {success ? "🎉 Bravo !" : "Résultat"}
+              </div>
+
               <div className="mt-2 text-white/70">
-                Score : <span className="font-semibold text-white">{score}/{questions.length}</span>
+                Score :{" "}
+                <span className="font-semibold text-white">
+                  {score}/{total}
+                </span>
                 <span className="text-white/40"> · </span>
                 {success ? (
-                  <span className="text-emerald-200">Réussi (≥ {PASS_SCORE})</span>
+                  <span className="text-emerald-200">
+                    Réussi (≥ {PASS_SCORE})
+                  </span>
                 ) : (
-                  <span className="text-rose-200">À retenter (objectif {PASS_SCORE}/{questions.length})</span>
+                  <span className="text-rose-200">
+                    À retenter (objectif {PASS_SCORE}/{total})
+                  </span>
                 )}
               </div>
 
@@ -271,11 +344,8 @@ export default function GrapeQuizPage() {
                 </Link>
 
                 <button
-                  onClick={() => {
-                    setI(0);
-                    setPicked(null);
-                    setScore(0);
-                  }}
+                  type="button"
+                  onClick={reset}
                   className="rounded-full border border-white/15 px-6 py-3 text-sm font-semibold text-white/85 hover:border-white/30"
                 >
                   Refaire le quiz
@@ -293,7 +363,8 @@ export default function GrapeQuizPage() {
 
               {success && (
                 <div className="mt-4 text-xs text-white/55">
-                  Prochaine étape : on enregistrera la réussite (XP / niveau) en localStorage.
+                  Prochaine étape : on enregistrera la réussite (XP / niveau) en
+                  localStorage.
                 </div>
               )}
             </div>
@@ -301,14 +372,14 @@ export default function GrapeQuizPage() {
             <div>
               <div className="flex items-center justify-between">
                 <div className="text-sm text-white/60">
-                  Question {i + 1}/{questions.length}
+                  Question {index + 1}/{total}
                 </div>
+
                 <div className="relative text-sm text-white/60">
                   Score: {score}
-                  {/* +XP floating */}
                   {pop && (
                     <span
-                      key={xpBurstKey}
+                      key={xpKey}
                       className="xp-float absolute -right-2 -top-5 rounded-full border border-emerald-400/30 bg-emerald-500/10 px-2 py-0.5 text-xs text-emerald-100"
                     >
                       +10 XP
@@ -317,20 +388,18 @@ export default function GrapeQuizPage() {
                 </div>
               </div>
 
-              <div className="mt-4 text-lg font-semibold">{q.question}</div>
+              <div className="mt-4 text-lg font-semibold">{current.question}</div>
 
               <div className="mt-4 grid gap-2">
-                {q.answers.map((a, idx) => {
-                  const isPicked = picked === idx;
+                {current.answers.map((a, idx) => {
                   const show = picked !== null;
-                  const correct = a.correct;
+                  const isPicked = picked === idx;
 
-                  const cls =
-                    show && isPicked
-                      ? correct
-                        ? "border-emerald-400/30 bg-emerald-500/10"
-                        : "border-rose-400/30 bg-rose-500/10"
-                      : "border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/[0.07]";
+                  const cls = show && isPicked
+                    ? a.correct
+                      ? "border-emerald-400/30 bg-emerald-500/10"
+                      : "border-rose-400/30 bg-rose-500/10"
+                    : "border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/[0.07]";
 
                   return (
                     <button
@@ -341,7 +410,9 @@ export default function GrapeQuizPage() {
                     >
                       {a.label}
                       {show && isPicked && (
-                        <div className="mt-2 text-xs text-white/70">{a.why}</div>
+                        <div className="mt-2 text-xs text-white/70">
+                          {a.why}
+                        </div>
                       )}
                     </button>
                   );
@@ -366,10 +437,9 @@ export default function GrapeQuizPage() {
           )}
         </div>
 
-        {/* Petit rappel objectif */}
         {!done && (
           <div className="mt-4 text-xs text-white/50">
-            Objectif : {PASS_SCORE}/{questions.length} pour valider le module.
+            Objectif : {PASS_SCORE}/{total} pour valider le module.
           </div>
         )}
       </div>
