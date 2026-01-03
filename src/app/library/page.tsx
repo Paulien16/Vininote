@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { deleteTasting, getAllTastings, type Tasting } from "@/lib/storage";
+import FavoriteButton from "@/components/ui/FavoriteButton";
 
 function formatDate(iso: string) {
   try {
@@ -94,22 +95,29 @@ export default function LibraryPage() {
                 key={t.id}
                 className="group rounded-3xl border border-white/10 bg-white/5 p-5 transition hover:border-white/20 hover:bg-white/[0.07]"
               >
-                <Link href={`/library/${t.id}`} className="block">
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <div className="text-lg font-semibold group-hover:underline">
-                        {t.wine.name || "Vin"} {t.wine.year ? `(${t.wine.year})` : ""}
-                      </div>
-                      <div className="mt-1 text-sm text-neutral-300">
-                        {t.wine.color ? `${t.wine.color}` : "couleur ?"}
-                        {t.wine.region ? ` · ${t.wine.region}` : ""}
-                        {t.wine.appellation ? ` · ${t.wine.appellation}` : ""}
-                        {" · "}
-                        {formatDate(t.createdAt)}
-                      </div>
+                {/* Header card: titre + favori */}
+                <div className="flex items-start justify-between gap-4">
+                  <Link href={`/library/${t.id}`} className="block min-w-0 flex-1">
+                    <div className="text-lg font-semibold group-hover:underline truncate">
+                      {t.wine.name || "Vin"} {t.wine.year ? `(${t.wine.year})` : ""}
                     </div>
-                  </div>
+                    <div className="mt-1 text-sm text-neutral-300">
+                      {t.wine.color ? `${t.wine.color}` : "couleur ?"}
+                      {t.wine.region ? ` · ${t.wine.region}` : ""}
+                      {t.wine.appellation ? ` · ${t.wine.appellation}` : ""}
+                      {" · "}
+                      {formatDate(t.createdAt)}
+                    </div>
+                  </Link>
 
+                  {/* IMPORTANT: le bouton n'est PAS dans le Link */}
+                  <div className="shrink-0">
+                    <FavoriteButton id={t.id} size="sm" />
+                  </div>
+                </div>
+
+                {/* Contenu card (cliquable) */}
+                <Link href={`/library/${t.id}`} className="block">
                   {t.wine.photoUrl && (
                     <img
                       src={t.wine.photoUrl}
@@ -130,9 +138,7 @@ export default function LibraryPage() {
 
                     <div>
                       Note :{" "}
-                      <span className="text-neutral-100">
-                        {t.conclusion?.stars ?? 0}/5
-                      </span>
+                      <span className="text-neutral-100">{t.conclusion?.stars ?? 0}/5</span>
                       {t.conclusion?.comment ? (
                         <>
                           {" · "}
